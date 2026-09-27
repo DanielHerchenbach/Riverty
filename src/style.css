@@ -80,7 +80,7 @@ h2 {
 
 .document-list li {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) auto auto;
+  grid-template-columns: minmax(8rem, 1fr) auto auto auto;
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
@@ -98,6 +98,15 @@ h2 {
   font-size: 0.75rem;
 }
 
+.document-state {
+  color: #4b5563;
+  white-space: nowrap;
+}
+
+.document-state.state-error {
+  color: #b91c1c;
+}
+
 button {
   padding: 0.35rem 0.55rem;
   border: 1px solid #d1d5db;
@@ -111,13 +120,18 @@ button {
     grid-template-columns: minmax(0, 1fr) auto;
   }
 
-  .document-list code {
+  .document-list .document-state {
     grid-row: 2;
     grid-column: 1;
   }
 
+  .document-list code {
+    grid-row: 3;
+    grid-column: 1;
+  }
+
   .document-list button {
-    grid-row: 1 / span 2;
+    grid-row: 1 / span 3;
     grid-column: 2;
   }
 }

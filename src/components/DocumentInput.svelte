@@ -3,23 +3,23 @@
   import { hashFile } from "../lib/hash";
   import DocumentList from "./DocumentList.svelte";
 
-  let isHashing = $state(false);
-
-  async function addFiles(event: Event) {
+  function addFiles(event: Event) {
     const input = event.currentTarget as HTMLInputElement;
     const files = Array.from(input.files ?? []);
-    isHashing = true;
+    input.value = "";
+    for (const file of files) {
+      const entry: DocumentEntry = { path: file.name, state: "hashing" };
+      documents.push(entry);
+      calculateHash(entry, file);
+    }
+  }
 
+  async function calculateHash(entry: DocumentEntry, file: File) {
     try {
-      for (const file of files) {
-        const entry: DocumentEntry = { path: file.name, hash: await hashFile(file) };
-        if (!documents.some((document) => document.hash === entry.hash)) {
-          documents.push(entry);
-        }
-      }
-    } finally {
-      isHashing = false;
-      input.value = "";
+      entry.hash = await hashFile(file);
+      entry.state = "ready";
+    } catch {
+      entry.state = "error";
     }
   }
 </script>
@@ -27,8 +27,8 @@
 <div class="panel-heading">
   <h1 id="document-input-title">Document input</h1>
   <label class="file-picker">
-    <span>{isHashing ? "Hashing…" : "Add documents"}</span>
-    <input type="file" multiple onchange={addFiles} disabled={isHashing} />
+    <span>Add documents</span>
+    <input type="file" multiple onchange={addFiles} />
   </label>
 </div>
 
