@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import os
 import re
 import uuid
@@ -9,6 +10,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from openai import APITimeoutError
 
 SERVER_DIR = Path(__file__).resolve().parent
 load_dotenv(SERVER_DIR / ".env")
@@ -19,6 +21,7 @@ if not DATABASE_URL:
 FILES_DIR = Path(os.environ.get("RIVERTY_FILES_DIR", SERVER_DIR / "files"))
 
 app = FastAPI()
+logger = logging.getLogger(__name__)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"^http://(localhost|127\.0\.0\.1):\d+$",
@@ -111,6 +114,9 @@ def analyze_file(file_hash: str, ext: str) -> dict[str, str]:
 
         toc = asyncio.run(analyze_to_toc(pdf_path))
     except Exception as error:
+        logger.exception("Document analysis failed for %s.%s", file_hash, ext)
+        if isinstance(error, APITimeoutError):
+            raise HTTPException(status_code=504, detail="TOC generation timed out; retry analysis") from error
         raise HTTPException(status_code=502, detail="Document analysis failed") from error
 
     with psycopg.connect(DATABASE_URL) as connection:

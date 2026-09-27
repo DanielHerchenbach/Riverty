@@ -7,7 +7,10 @@
     <li>
       <span class="document-path" title={document.path}>{document.path}</span>
       <span class="document-state" class:state-error={document.state === "error"}>
-        {document.state}
+        {document.state === "hashing" ? "Hashing…" :
+          document.state === "uploading" ? "Uploading…" :
+          document.state === "analyzing" ? "Analyzing…" :
+          document.state === "error" ? document.error ?? "Failed" : "Ready"}
       </span>
       <button type="button" aria-label={`Remove ${document.path}`} onclick={() => documents.splice(index, 1)}>
         Remove

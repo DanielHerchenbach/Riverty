@@ -1,7 +1,10 @@
 export type DocumentEntry = {
   path: string;
   hash?: string;
-  state: "hashing" | "ready" | "error";
+  ext?: string;
+  toc?: string;
+  state: "hashing" | "uploading" | "analyzing" | "ready" | "error";
+  error?: string;
 };
 
 export const documents = $state<DocumentEntry[]>([]);

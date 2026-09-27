@@ -1,5 +1,6 @@
 azure-core
 azure-ai-documentintelligence
+aiohttp
 openai>=1.0.0
 fastapi
 uvicorn

@@ -10,7 +10,7 @@ from server.toc import SYSTEM_PROMPT_TOC_SIMPLE
 async def analyze_to_toc(pdf_path: Path) -> str:
     _, document_text = await analyze_layout(pdf_path=pdf_path)
 
-    async with AsyncOpenAI(api_key=OPENAI_KEY, max_retries=0, timeout=60) as client:
+    async with AsyncOpenAI(api_key=OPENAI_KEY, max_retries=0, timeout=600) as client:
         response = await client.chat.completions.create(
             model="gpt-6-sol",
             reasoning_effort="medium",
