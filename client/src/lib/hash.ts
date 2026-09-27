@@ -1,5 +1,11 @@
 import { sha256 } from "@noble/hashes/sha2.js";
 
+/** Hashes a string's UTF-8 bytes with SHA-256. */
+export function hashString(value: string): string {
+  const digest = sha256(new TextEncoder().encode(value));
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 /** Hashes the file's bytes with SHA-256 without loading the entire file into memory. */
 export async function hashFile(file: File): Promise<string> {
   const hash = sha256.create();
@@ -16,6 +22,5 @@ export async function hashFile(file: File): Promise<string> {
   }
 
   const digest = hash.digest();
-  const hex = Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
-  return `sha256:${hex}`;
+  return Array.from(digest, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
