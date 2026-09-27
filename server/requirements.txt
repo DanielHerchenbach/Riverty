@@ -3,3 +3,7 @@ azure-ai-documentintelligence
 openai>=1.0.0
 fastapi
 uvicorn
+python-dotenv
+python-multipart
+psycopg[binary]
+

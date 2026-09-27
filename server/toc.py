@@ -162,8 +162,13 @@ For each level of indentation, the output uses exactly two spaces.
 IMPORTANT: All extracted text must be taken VERBATIM from the input.
 """
 
-KEY = "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"
+import os
+from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().with_name(".env"))
+KEY = os.environ['OPENAI_API_KEY']
 import asyncio
 
 from openai import AsyncOpenAI

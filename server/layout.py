@@ -1,17 +1,21 @@
 """Return Azure Document Intelligence's visual reading order."""
 
 import asyncio
+import os
 from pathlib import Path
+
+from dotenv import load_dotenv
 
 from azure.ai.documentintelligence.aio import DocumentIntelligenceClient
 from azure.ai.documentintelligence.models import AnalyzeDocumentRequest, AnalyzeResult
 from azure.core.credentials import AzureKeyCredential
 
 
-ENDPOINT = "https://extracttoc.cognitiveservices.azure.com/"
-KEY = "Bnb39addOQ2pUlrOehrSjURlxqgnxz84z1vytr30BEKtiZ4oILruJQQJ99CIACPV0roXJ3w3AAALACOGJeuh"
-PDF_PATH = Path("test.pdf")
-PAGES = "1-2" # Set to None to analyze the complete document.
+load_dotenv(Path(__file__).resolve().with_name('.env'))
+
+
+ENDPOINT = os.environ["AZURE_DOCUMENT_INTELLIGENCE_ENDPOINT"]
+KEY = os.environ["AZURE_DOCUMENT_INTELLIGENCE_KEY"]
 
 def _line_role(result: AnalyzeResult, page_number: int, line) -> str:
     line_start = line.spans[0].offset if line.spans else None
@@ -29,13 +33,14 @@ def _line_role(result: AnalyzeResult, page_number: int, line) -> str:
     return ""
 
 
-async def analyze_layout(pages: str | None = PAGES) -> tuple[str, str]:
+async def analyze_layout(
+    pdf_path: Path 
+) -> tuple[str, str]:
     async with DocumentIntelligenceClient(ENDPOINT, AzureKeyCredential(KEY)) as client:
-        with PDF_PATH.open("rb") as document:
+        with pdf_path.open("rb") as document:
             poller = await client.begin_analyze_document(
                 "prebuilt-layout",
-                AnalyzeDocumentRequest(bytes_source=document.read()),
-                pages=pages,
+                AnalyzeDocumentRequest(bytes_source=document.read())
             )
         result: AnalyzeResult = await poller.result()
 
