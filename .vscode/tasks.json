@@ -5,6 +5,7 @@
       "label": "Web: start local server",
       "type": "shell",
       "command": "npm run dev",
+      "options": { "cwd": "${workspaceFolder}/client" },
       "isBackground": true,
       "problemMatcher": {
         "owner": "vite",
@@ -19,7 +20,9 @@
     {
       "label": "API: start FastAPI server",
       "type": "shell",
-      "command": "python -m uvicorn api:app --reload",
+      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
+      "args": ["-m", "uvicorn", "server.api:app", "--reload"],
+      "options": { "cwd": "${workspaceFolder}" },
       "isBackground": true,
       "problemMatcher": {
         "owner": "uvicorn",
