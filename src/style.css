@@ -1,0 +1,39 @@
+:root {
+  font-family: system-ui, sans-serif;
+  color: #1f2937;
+  background: #f3f4f6;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  padding: 1rem;
+}
+
+.panels {
+  display: grid;
+  grid-template-rows: repeat(3, minmax(8rem, 1fr));
+  gap: 1rem;
+  min-height: calc(100vh - 2rem);
+}
+
+.panel {
+  padding: 1rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+}
+
+h1,
+h2 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}

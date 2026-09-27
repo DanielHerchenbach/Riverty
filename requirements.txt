@@ -1,3 +1,5 @@
 azure-core
 azure-ai-documentintelligence
 openai>=1.0.0
+fastapi
+uvicorn
