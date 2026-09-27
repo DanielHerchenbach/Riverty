@@ -10,7 +10,8 @@
     for (const file of files) {
       const entry: DocumentEntry = { path: file.name, state: "hashing" };
       documents.push(entry);
-      calculateHash(entry, file);
+      const reactiveEntry = documents[documents.length - 1];
+      if (reactiveEntry) void calculateHash(reactiveEntry, file);
     }
   }
 
