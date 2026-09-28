@@ -8,3 +8,4 @@ export type DocumentEntry = {
 };
 
 export const documents = $state<DocumentEntry[]>([]);
+export const selection = $state<{ document: DocumentEntry | null }>({ document: null });

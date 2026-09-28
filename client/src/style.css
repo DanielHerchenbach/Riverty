@@ -19,9 +19,10 @@ body {
 
 .panels {
   display: grid;
-  grid-template-rows: repeat(3, minmax(8rem, 1fr));
+  grid-template-rows: 1fr 1fr 3fr;
   gap: 1rem;
-  min-height: calc(100vh - 2rem);
+  height: calc(100vh - 2rem);
+  min-height: 26rem;
 }
 
 .panel {
@@ -29,6 +30,7 @@ body {
   border: 1px solid #d1d5db;
   border-radius: 0.5rem;
   background: white;
+  min-height: 0;
   overflow: auto;
 }
 
@@ -80,11 +82,27 @@ h2 {
 
 .document-list li {
   display: grid;
-  grid-template-columns: minmax(8rem, 1fr) auto auto auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 0.75rem;
   min-width: 0;
   font-size: 0.875rem;
+}
+
+.document-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  padding: 0.45rem 0.6rem;
+  text-align: left;
+}
+
+.document-row.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 0 0 1px #2563eb;
 }
 
 .document-path {
@@ -107,6 +125,63 @@ h2 {
   color: #b91c1c;
 }
 
+.selected-document-title {
+  overflow: hidden;
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tree-message {
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+.tree-message.state-error {
+  color: #b91c1c;
+}
+
+.document-tree,
+.document-tree ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.25rem;
+  list-style: none;
+}
+
+.document-tree {
+  padding-left: 0;
+  font-size: 0.875rem;
+}
+
+.document-tree li {
+  min-width: 0;
+}
+
+.tree-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.35rem;
+  padding: 0.15rem 0;
+}
+
+.tree-toggle,
+.tree-spacer {
+  flex: 0 0 1rem;
+  width: 1rem;
+  padding: 0;
+  border: 0;
+  color: #4b5563;
+  text-align: center;
+}
+
+.tree-row > span:last-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
 button {
   padding: 0.35rem 0.55rem;
   border: 1px solid #d1d5db;
@@ -116,22 +191,9 @@ button {
 }
 
 @media (max-width: 640px) {
-  .document-list li {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-
-  .document-list .document-state {
-    grid-row: 2;
-    grid-column: 1;
-  }
-
-  .document-list code {
-    grid-row: 3;
-    grid-column: 1;
-  }
-
-  .document-list button {
-    grid-row: 1 / span 3;
-    grid-column: 2;
+  .document-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.2rem;
   }
 }
