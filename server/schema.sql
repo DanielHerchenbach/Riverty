@@ -12,7 +12,7 @@ CREATE TABLE IF NOT EXISTS files (
 );
 
 /* node_ids may be individual leaf nodes or larger subtree roots.
-text is the exactly what is used for embedding, including the text of each node's ancestors to maintain context. Stored for debugging.
+text is the exactly what is used for embedding, including the text of each node's ancestors to maintain context.
 */
 CREATE TABLE IF NOT EXISTS chunks (
     file_hash TEXT NOT NULL,

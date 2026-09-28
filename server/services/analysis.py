@@ -6,7 +6,7 @@ from openai import AsyncOpenAI
 from server.layout import analyze_layout
 from server.services.embeddings import embed_chunks
 from server.toc import KEY as OPENAI_KEY
-from server.toc import SYSTEM_PROMPT_TOC_SIMPLE
+from server.toc import SYSTEM_PROMPT_TOC
 from server.tree import Chunk, TreeNode, build_tree, chunk_tree
 
 
@@ -25,7 +25,7 @@ async def analyze_document(pdf_path: Path) -> AnalysisResult:
             reasoning_effort="medium",
             temperature=1,
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPT_TOC_SIMPLE},
+                {"role": "system", "content": SYSTEM_PROMPT_TOC},
                 {"role": "user", "content": document_text.replace("\n", " ")},
             ],
         )
