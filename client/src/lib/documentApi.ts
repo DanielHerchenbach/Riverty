@@ -1,7 +1,9 @@
+import type { TreeNode } from "./documentTree";
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://127.0.0.1:8000";
 
-type TocResponse = {
-  toc: string;
+type TreeResponse = {
+  tree: TreeNode[];
 };
 
 async function ensureSuccess(response: Response): Promise<void> {
@@ -31,12 +33,12 @@ export async function uploadIfMissing(file: File, hash: string, ext: string): Pr
   await ensureSuccess(upload);
 }
 
-export async function analyzeDocument(hash: string, ext: string): Promise<string> {
+export async function analyzeDocument(hash: string, ext: string): Promise<TreeNode[]> {
   const response = await fetch(`${API_BASE_URL}/api/analyze/${hash}/${ext}`, {
     method: "PUT",
   });
   await ensureSuccess(response);
 
-  const result = (await response.json()) as TocResponse;
-  return result.toc;
+  const result = (await response.json()) as TreeResponse;
+  return result.tree;
 }

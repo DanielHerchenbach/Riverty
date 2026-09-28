@@ -1,8 +1,10 @@
+import type { TreeNode } from "./documentTree";
+
 export type DocumentEntry = {
   path: string;
   hash?: string;
   ext?: string;
-  toc?: string;
+  tree?: TreeNode[];
   state: "hashing" | "uploading" | "analyzing" | "ready" | "error";
   error?: string;
 };

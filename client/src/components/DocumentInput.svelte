@@ -27,7 +27,7 @@
       await uploadIfMissing(file, hash, ext);
 
       entry.state = "analyzing";
-      entry.toc = await analyzeDocument(hash, ext);
+      entry.tree = await analyzeDocument(hash, ext);
       entry.state = "ready";
     } catch (error) {
       entry.state = "error";

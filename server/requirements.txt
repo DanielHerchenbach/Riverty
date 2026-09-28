@@ -7,4 +7,5 @@ uvicorn
 python-dotenv
 python-multipart
 psycopg[binary]
+tiktoken
 

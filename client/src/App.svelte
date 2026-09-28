@@ -2,9 +2,6 @@
   import DocumentInput from "./components/DocumentInput.svelte";
   import DocumentTreeNode from "./components/DocumentTreeNode.svelte";
   import { selection } from "./lib/documents.svelte";
-  import { parseToc } from "./lib/tocTree";
-
-  let tree = $derived(selection.document?.toc ? parseToc(selection.document.toc) : []);
 </script>
 
 <main class="panels" aria-label="Document workspace">
@@ -18,12 +15,14 @@
     <h2 id="document-view-title">Document view</h2>
     {#if selection.document}
       <h3 class="selected-document-title" title={selection.document.path}>{selection.document.path}</h3>
-      {#if selection.document.toc}
-        <ul class="document-tree" aria-label="Document structure">
-          {#each tree as node}
-            <DocumentTreeNode {node} />
-          {/each}
-        </ul>
+      {#if selection.document.tree}
+        {#key `${selection.document.hash}.${selection.document.ext}`}
+          <ul class="document-tree" aria-label="Document structure">
+            {#each selection.document.tree as node (node.id)}
+              <DocumentTreeNode {node} />
+            {/each}
+          </ul>
+        {/key}
       {:else if selection.document.state === "error"}
         <p class="tree-message state-error">{selection.document.error ?? "Document analysis failed."}</p>
       {:else}

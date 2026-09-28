@@ -1,12 +1,12 @@
 <script lang="ts">
   import DocumentTreeNode from "./DocumentTreeNode.svelte";
-  import type { TocNode } from "../lib/tocTree";
+  import type { TreeNode } from "../lib/documentTree";
 
-  let { node }: { node: TocNode } = $props();
+  let { node }: { node: TreeNode } = $props();
   let expanded = $state(true);
 </script>
 
-<li>
+<li data-node-id={node.id}>
   <div class="tree-row">
     {#if node.children.length > 0}
       <button
@@ -25,7 +25,7 @@
   </div>
   {#if expanded && node.children.length > 0}
     <ul>
-      {#each node.children as child}
+      {#each node.children as child (child.id)}
         <DocumentTreeNode node={child} />
       {/each}
     </ul>

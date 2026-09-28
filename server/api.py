@@ -12,6 +12,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from openai import APITimeoutError
 
+from server.storage import save_analysis
+
 SERVER_DIR = Path(__file__).resolve().parent
 load_dotenv(SERVER_DIR / ".env")
 
@@ -78,7 +80,7 @@ def upload_file(file_hash: str, ext: str, file: UploadFile = File(...)) -> dict[
 
         with psycopg.connect(DATABASE_URL) as connection:
             connection.execute(
-                "INSERT INTO files (hash, ext, toc) VALUES (%s, %s, NULL) "
+                "INSERT INTO files (hash, ext, tree) VALUES (%s, %s, NULL) "
                 "ON CONFLICT (hash, ext) DO NOTHING",
                 (file_hash, ext),
             )
@@ -92,43 +94,33 @@ def upload_file(file_hash: str, ext: str, file: UploadFile = File(...)) -> dict[
 
 
 @app.put("/api/analyze/{file_hash}/{ext}")
-def analyze_file(file_hash: str, ext: str) -> dict[str, str]:
+def analyze_file(file_hash: str, ext: str) -> dict:
     validate_file_key(file_hash, ext)
 
     with psycopg.connect(DATABASE_URL) as connection:
         row = connection.execute(
-            "SELECT toc FROM files WHERE hash = %s AND ext = %s",
+            "SELECT tree FROM files WHERE hash = %s AND ext = %s",
             (file_hash, ext),
         ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="File has not been uploaded")
     if row[0] is not None:
-        return {"hash": file_hash, "ext": ext, "toc": row[0]}
+        return {"hash": file_hash, "ext": ext, "tree": row[0]}
 
     pdf_path = stored_file_path(file_hash, ext)
     if not pdf_path.is_file():
         raise HTTPException(status_code=404, detail="Stored file is missing")
 
     try:
-        from server.services.analysis import analyze_to_toc
+        from server.services.analysis import analyze_document
 
-        toc = asyncio.run(analyze_to_toc(pdf_path))
+        result = asyncio.run(analyze_document(pdf_path))
+        with psycopg.connect(DATABASE_URL) as connection:
+            tree = save_analysis(connection, file_hash, ext, result.tree, result.chunks)
     except Exception as error:
         logger.exception("Document analysis failed for %s.%s", file_hash, ext)
         if isinstance(error, APITimeoutError):
-            raise HTTPException(status_code=504, detail="TOC generation timed out; retry analysis") from error
+            raise HTTPException(status_code=504, detail="Document analysis timed out; retry analysis") from error
         raise HTTPException(status_code=502, detail="Document analysis failed") from error
 
-    with psycopg.connect(DATABASE_URL) as connection:
-        connection.execute(
-            "UPDATE files SET toc = %s WHERE hash = %s AND ext = %s AND toc IS NULL",
-            (toc, file_hash, ext),
-        )
-        row = connection.execute(
-            "SELECT toc FROM files WHERE hash = %s AND ext = %s",
-            (file_hash, ext),
-        ).fetchone()
-
-    if row is None or row[0] is None:
-        raise HTTPException(status_code=500, detail="Could not save the analysis result")
-    return {"hash": file_hash, "ext": ext, "toc": row[0]}
+    return {"hash": file_hash, "ext": ext, "tree": tree}
