@@ -42,10 +42,14 @@ for example the following is CORRECT:
     Legal text...  
 """
 
+import os
+from pathlib import Path
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().with_name(".env"))
+KEY = os.environ['OPENAI_API_KEY']
+
 # USAGE:
-#
-#load_dotenv(Path(__file__).resolve().with_name(".env"))
-#KEY = os.environ['OPENAI_API_KEY']
 #
 # client = AsyncOpenAI(
 #     api_key=KEY,

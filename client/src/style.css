@@ -176,7 +176,7 @@ h2 {
   text-align: center;
 }
 
-.tree-row > span:last-child {
+.tree-row > span:not(.tree-spacer):not(.match-label) {
   min-width: 0;
   overflow-wrap: anywhere;
   white-space: pre-wrap;
@@ -189,6 +189,18 @@ button {
   background: white;
   cursor: pointer;
 }
+
+.search-form { display: grid; gap: 0.5rem; margin-top: 0.75rem; font-size: 0.875rem; }
+.search-form textarea { width: 100%; resize: vertical; padding: 0.5rem; font: inherit; border: 1px solid #9ca3af; border-radius: 0.375rem; }
+.search-actions { display: flex; align-items: center; gap: 0.75rem; }
+.search-actions span, .search-explanation { font-size: 0.8rem; color: #4b5563; }
+.search-explanation p { margin: 0.5rem 0 0; }
+.state-error { color: #b91c1c; }
+button:disabled { opacity: 0.55; cursor: default; }
+.tree-row.node-match { background: #fde68a; border-left: 3px solid #b45309; border-radius: 0.2rem; }
+.tree-row.ancestor-match { background: #fffbeb; border-left: 3px solid #fde68a; }
+.tree-row.document-root { font-weight: 600; }
+.match-label { margin-left: auto; padding: 0 0.3rem; font-size: 0.75rem; color: #78350f; white-space: nowrap; }
 
 @media (max-width: 640px) {
   .document-row {

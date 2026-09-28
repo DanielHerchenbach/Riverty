@@ -6,6 +6,29 @@ type TreeResponse = {
   tree: TreeNode[];
 };
 
+export type SearchDocument = { hash: string; ext: string; name: string };
+export type DocumentSearchResult = {
+  hash: string;
+  ext: string;
+  matches: string[];
+  status: "evaluated" | "no_candidates" | "error";
+  error: string | null;
+};
+export type SearchResponse = {
+  explanations: string[];
+  documents: DocumentSearchResult[];
+};
+
+export async function searchDocuments(prompt: string, documents: SearchDocument[]): Promise<SearchResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt, documents }),
+  });
+  await ensureSuccess(response);
+  return response.json();
+}
+
 async function ensureSuccess(response: Response): Promise<void> {
   if (response.ok) return;
 

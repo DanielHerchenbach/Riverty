@@ -22,12 +22,14 @@ if not DATABASE_URL:
     raise RuntimeError("Set RIVERTY_DATABASE_URL in server/.env")
 FILES_DIR = Path(os.environ.get("RIVERTY_FILES_DIR", SERVER_DIR / "files"))
 
+from server.services.search import SearchRequest, SearchResponse, search_documents
+
 app = FastAPI()
 logger = logging.getLogger(__name__)
 app.add_middleware(
     CORSMiddleware,
     allow_origin_regex=r"^http://(localhost|127\.0\.0\.1):\d+$",
-    allow_methods=["GET", "HEAD", "PUT", "OPTIONS"],
+    allow_methods=["GET", "HEAD", "PUT", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -41,6 +43,19 @@ def validate_file_key(file_hash: str, ext: str) -> None:
 
 def stored_file_path(file_hash: str, ext: str) -> Path:
     return FILES_DIR / f"{file_hash}.{ext}"
+
+
+@app.post("/api/search", response_model=SearchResponse)
+def search(request: SearchRequest) -> SearchResponse:
+    try:
+        return asyncio.run(search_documents(request, DATABASE_URL))
+    except ValueError as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+    except Exception as error:
+        logger.exception("Document search failed")
+        if isinstance(error, APITimeoutError):
+            raise HTTPException(status_code=504, detail="Search timed out; please retry") from error
+        raise HTTPException(status_code=502, detail="Search failed; please retry") from error
 
 
 @app.head("/api/upload/{file_hash}/{ext}")

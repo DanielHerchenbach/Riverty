@@ -1,13 +1,24 @@
 <script lang="ts">
   import DocumentTreeNode from "./DocumentTreeNode.svelte";
-  import type { TreeNode } from "../lib/documentTree";
+  import { DOCUMENT_ROOT_ID, type TreeNode } from "../lib/documentTree";
 
-  let { node }: { node: TreeNode } = $props();
+  let { node, matches, ancestors, hasResults }: {
+    node: TreeNode;
+    matches: Set<string>;
+    ancestors: Set<string>;
+    hasResults: boolean;
+  } = $props();
   let expanded = $state(true);
+  $effect(() => {
+    expanded = !hasResults || ancestors.has(node.id)
+      || (matches.has(node.id) && node.id !== DOCUMENT_ROOT_ID);
+  });
 </script>
 
 <li data-node-id={node.id}>
-  <div class="tree-row">
+  <div class="tree-row" class:node-match={matches.has(node.id)}
+    class:ancestor-match={!matches.has(node.id) && ancestors.has(node.id)}
+    class:document-root={node.id === DOCUMENT_ROOT_ID}>
     {#if node.children.length > 0}
       <button
         class="tree-toggle"
@@ -22,11 +33,12 @@
       <span class="tree-spacer"></span>
     {/if}
     <span>{node.text}</span>
+    {#if matches.has(node.id)}<span class="match-label">Match</span>{/if}
   </div>
   {#if expanded && node.children.length > 0}
     <ul>
       {#each node.children as child (child.id)}
-        <DocumentTreeNode node={child} />
+        <DocumentTreeNode node={child} {matches} {ancestors} {hasResults} />
       {/each}
     </ul>
   {/if}

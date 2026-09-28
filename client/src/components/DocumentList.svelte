@@ -17,7 +17,9 @@
           {document.state === "hashing" ? "Hashing…" :
             document.state === "uploading" ? "Uploading…" :
             document.state === "analyzing" ? "Analyzing…" :
-            document.state === "error" ? document.error ?? "Failed" : "Ready"}
+            document.state === "error" ? document.error ?? "Failed" :
+            document.searchResult?.status === "error" ? "Search failed" :
+            document.searchResult ? `${document.searchResult.matches.length} match${document.searchResult.matches.length === 1 ? "" : "es"}` : "Ready"}
         </span>
       </button>
       <button type="button" aria-label={`Remove ${document.path}`} onclick={() => {

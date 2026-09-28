@@ -1,7 +1,16 @@
 <script lang="ts">
   import DocumentInput from "./components/DocumentInput.svelte";
   import DocumentTreeNode from "./components/DocumentTreeNode.svelte";
-  import { selection } from "./lib/documents.svelte";
+  import DocumentSearch from "./components/DocumentSearch.svelte";
+  import { selection, searchState } from "./lib/documents.svelte";
+  import { documentRoot, matchAncestors } from "./lib/documentTree";
+
+  let root = $derived(selection.document?.tree
+    ? documentRoot(selection.document.path, selection.document.tree) : null);
+  let matches = $derived(new Set(selection.document?.searchResult?.matches ?? []));
+  let ancestors = $derived(root ? matchAncestors(root, matches) : new Set<string>());
+  let hasResults = $derived(selection.document?.searchResult !== undefined
+    && selection.document.searchResult.status !== "error");
 </script>
 
 <main class="panels" aria-label="Document workspace">
@@ -9,18 +18,20 @@
     <DocumentInput />
   </section>
   <section class="panel" aria-labelledby="search-title">
-    <h2 id="search-title">Search</h2>
+    <DocumentSearch />
   </section>
   <section class="panel" aria-labelledby="document-view-title">
     <h2 id="document-view-title">Document view</h2>
     {#if selection.document}
-      <h3 class="selected-document-title" title={selection.document.path}>{selection.document.path}</h3>
-      {#if selection.document.tree}
-        {#key `${selection.document.hash}.${selection.document.ext}`}
+      {#if root}
+        {#if selection.document.searchResult?.status === "error"}
+          <p class="tree-message state-error">{selection.document.searchResult.error}</p>
+        {:else if selection.document.searchResult?.status === "no_candidates"}
+          <p class="tree-message">No candidate passages were retrieved for this document.</p>
+        {/if}
+        {#key `${selection.document.hash}.${selection.document.ext}.${searchState.revision}`}
           <ul class="document-tree" aria-label="Document structure">
-            {#each selection.document.tree as node (node.id)}
-              <DocumentTreeNode {node} />
-            {/each}
+            <DocumentTreeNode node={root} {matches} {ancestors} {hasResults} />
           </ul>
         {/key}
       {:else if selection.document.state === "error"}
