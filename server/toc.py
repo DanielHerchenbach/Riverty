@@ -134,6 +134,23 @@ Long texts are shortened by keeping only the first four words and the last four 
 (a word counts as a sequence of non-space-characters).
 IMPORTANT: All extracted text—whether it is a full unshortened phrase, or the first/last words of a shortened text—
 must be taken VERBATIM from the input.
+
+IMPORTANT: DO NOT PUT STRUCTURING ELEMENTS WITH THE ACTUAL CONTENT IN THE SAME LINE!
+WRONG:
+  1) Legal text...
+  2) Legal text...
+CORRECT:
+  1)
+    Legal text...
+  2)
+    Legal text...
+
+However, text merely being a label for a structuring element, must be put on the same line,
+for example the following is CORRECT:
+  Chapter 1 Introduction
+    Legal text...
+  Chapter 2 Scope
+    Legal text...
 """
 
 SYSTEM_PROMPT_TOC_SIMPLE = r"""
@@ -160,6 +177,23 @@ Immigration Act
  
 For each level of indentation, the output uses exactly two spaces.
 IMPORTANT: All extracted text must be taken VERBATIM from the input.
+
+IMPORTANT: DO NOT PUT STRUCTURING ELEMENTS WITH THE ACTUAL CONTENT IN THE SAME LINE!
+WRONG:
+  1) Legal text...
+  2) Legal text...
+CORRECT:
+  1)
+    Legal text...
+  2)
+    Legal text...
+
+However, text merely being a label for a structuring element, must be put on the same line,
+for example the following is CORRECT:
+  Chapter 1 Introduction
+    Legal text...
+  Chapter 2 Scope
+    Legal text...  
 """
 
 import os
