@@ -19,25 +19,28 @@ class SearchTreeTests(unittest.TestCase):
     def test_candidates_keep_context_and_exclude_unretrieved_siblings(self):
         tree, allowed = candidate_tree(self.tree, "contract.pdf", {"n3"})
         self.assertEqual(tree["text"], "contract.pdf")
-        self.assertTrue(tree["context_only"])
+        self.assertNotIn("id", tree)
+        self.assertNotIn("id", tree["children"][0])
+        self.assertNotIn("context_only", str(tree))
         self.assertEqual(tree["children"][0]["children"][0]["children"][0]["text"], "Pay within 30 days")
         self.assertEqual(allowed, {"n2", "n3"})
+        self.assertEqual(validate_matches(["n3"], tree, allowed), ["n3"])
         for invalid in ["n1", "n4", DOCUMENT_ROOT_ID, "invented"]:
             with self.subTest(invalid=invalid), self.assertRaises(ValueError):
                 validate_matches([invalid], tree, allowed)
 
     def test_full_scan_supports_root_and_removes_overlapping_matches(self):
         tree, allowed = candidate_tree(self.tree, "contract.pdf", None)
+        self.assertEqual(tree["id"], DOCUMENT_ROOT_ID)
+        self.assertNotIn("context_only", str(tree))
         self.assertEqual(validate_matches(["n3", "n2", "n3"], tree, allowed), ["n2"])
         self.assertEqual(validate_matches(["n3", DOCUMENT_ROOT_ID], tree, allowed), [DOCUMENT_ROOT_ID])
         self.assertEqual(allowed, {DOCUMENT_ROOT_ID, "n1", "n2", "n3", "n4", "n5"})
 
-    def test_plans_cannot_silently_do_no_search(self):
-        empty = normalize_plan(SearchPlan(strategy="retrieve", exact_phrases=[" "], semantic_queries=[]))
-        self.assertEqual(empty.strategy, "full_scan")
-        full = normalize_plan(SearchPlan(strategy="full_scan", exact_phrases=["x"], semantic_queries=["y"]))
-        self.assertEqual(full.exact_phrases, [])
-        self.assertEqual(full.semantic_queries, [])
+    def test_plan_normalization_removes_blank_and_duplicate_queries(self):
+        plan = normalize_plan(SearchPlan(exact_phrases=[" ", " Payment ", "payment"],
+                                         semantic_queries=[" ", "Notice", "notice"]))
+        self.assertEqual(plan.model_dump(), {"exact_phrases": ["Payment"], "semantic_queries": ["Notice"]})
 
 
 class SearchFlowTests(unittest.IsolatedAsyncioTestCase):
@@ -61,7 +64,7 @@ class SearchFlowTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_full_scan_reviews_every_document_without_retrieval(self):
         result, calls, retrieve, embed = await self.run_search(
-            SearchPlan(strategy="full_scan", exact_phrases=[], semantic_queries=[]),
+            SearchPlan(exact_phrases=[], semantic_queries=[]),
             [NodeMatches(matches=[DOCUMENT_ROOT_ID]), NodeMatches(matches=[])],
         )
         self.assertEqual([doc.status for doc in result.documents], ["evaluated", "evaluated"])
@@ -69,16 +72,18 @@ class SearchFlowTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(calls.await_count, 3)
         retrieve.assert_not_called()
         embed.assert_not_awaited()
-        self.assertTrue(calls.await_args_list[1].args[2]["complete_document"])
+        self.assertNotIn("complete_document", calls.await_args_list[1].args[2])
+        self.assertNotIn("selectable_ids", calls.await_args_list[1].args[2])
 
     async def test_retrieval_skips_unmatched_documents_and_flags_bad_ids(self):
         with self.assertLogs("server.services.search", level="ERROR"):
             result, calls, _, _ = await self.run_search(
-                SearchPlan(strategy="retrieve", exact_phrases=["Payment"], semantic_queries=[]),
+                SearchPlan(exact_phrases=["Payment"], semantic_queries=[]),
                 [NodeMatches(matches=["invented"])], candidates=[{"n2"}, set()],
             )
         self.assertEqual([doc.status for doc in result.documents], ["error", "no_candidates"])
         self.assertEqual(calls.await_count, 2)
+        self.assertNotIn("selectable_ids", calls.await_args_list[1].args[2])
 
 
 class RetrievalDatabaseTests(unittest.TestCase):
@@ -99,6 +104,6 @@ class RetrievalDatabaseTests(unittest.TestCase):
                 connection.execute("INSERT INTO chunks VALUES (%s, 'pdf', ARRAY['literal'], 'FEE 10%%_X', '[0,1]')", (doc.hash,))
                 connection.execute("INSERT INTO chunks VALUES (%s, 'pdf', ARRAY['wrong'], 'fee 100xX', '[0,1]')", (doc.hash,))
                 connection.execute("INSERT INTO chunks VALUES ('other', 'pdf', ARRAY['other'], 'fee 10%%_X', '[1,0]')")
-                plan = SearchPlan(strategy="retrieve", exact_phrases=["fee 10%_x"], semantic_queries=["semantic"])
+                plan = SearchPlan(exact_phrases=["fee 10%_x"], semantic_queries=["semantic"])
                 matches = retrieve_candidates(connection, doc, plan, [Chunk(node_ids=[], text="semantic", embedding=[1, 0])])
                 self.assertEqual(matches, {"literal", *(f"n{i}" for i in range(12))})
