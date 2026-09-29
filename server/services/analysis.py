@@ -4,6 +4,7 @@ from pathlib import Path
 from openai import AsyncOpenAI
 
 from server.layout import analyze_layout
+from server.models import ANALYSIS_MODEL, ANALYSIS_REASONING_EFFORT
 from server.services.embeddings import embed_chunks
 from server.toc import KEY as OPENAI_KEY
 from server.toc import SYSTEM_PROMPT_TOC
@@ -21,8 +22,8 @@ async def analyze_document(pdf_path: Path) -> AnalysisResult:
 
     async with AsyncOpenAI(api_key=OPENAI_KEY, max_retries=0, timeout=600) as client:
         response = await client.chat.completions.create(
-            model="gpt-6-sol",
-            reasoning_effort="medium",
+            model=ANALYSIS_MODEL,
+            reasoning_effort=ANALYSIS_REASONING_EFFORT,
             temperature=1,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT_TOC},

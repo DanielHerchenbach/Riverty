@@ -1,8 +1,8 @@
 """Plan retrieval, merge candidates, then locate matches in each document tree."""
 
+import asyncio
 import json
 import logging
-import os
 from time import perf_counter
 from typing import Literal
 
@@ -10,11 +10,14 @@ import psycopg
 from openai import AsyncOpenAI
 from pydantic import BaseModel, Field
 
+from server.models import (
+    EVALUATOR_MODEL, EVALUATOR_REASONING_EFFORT,
+    PLANNER_MODEL, PLANNER_REASONING_EFFORT,
+)
 from server.services.embeddings import embed_chunks
 from server.tree import Chunk, TreeNode
 
 logger = logging.getLogger(__name__)
-SEARCH_MODEL = os.environ.get("RIVERTY_SEARCH_MODEL", "gpt-6-sol")
 VECTOR_SIMILARITY_THRESHOLD = 0.30  # Cosine similarity; tune against demo queries.
 DOCUMENT_ROOT_ID = "document_root"
 
@@ -94,9 +97,13 @@ For matches within specific passages, return the smallest sufficient node IDs in
 
 
 async def structured_call(client: AsyncOpenAI, system: str, payload: dict, schema):
+    model, effort = {
+        SearchPlan: (PLANNER_MODEL, PLANNER_REASONING_EFFORT),
+        NodeMatches: (EVALUATOR_MODEL, EVALUATOR_REASONING_EFFORT),
+    }[schema]
     response = await client.chat.completions.parse(
-        model=SEARCH_MODEL,
-        reasoning_effort="medium",
+        model=model,
+        reasoning_effort=effort,
         messages=[{"role": "system", "content": system},
                   {"role": "user", "content": json.dumps(payload, ensure_ascii=False)}],
         response_format=schema,
@@ -223,7 +230,8 @@ async def _search_documents(request: SearchRequest, database_url: str,
 
     async with AsyncOpenAI(timeout=600, max_retries=0) as client:
         tic = perf_counter()
-        raw_plan = await structured_call(client, PLANNER_PROMPT, {"request": request.prompt}, SearchPlan)
+        raw_plan = await structured_call(client, PLANNER_PROMPT, {"request": request.prompt},
+                                         SearchPlan)
         plan = normalize_plan(raw_plan)
         use_retrieval = bool(plan.exact_phrases or plan.semantic_queries)
         timings.append(("Query planning", perf_counter() - tic))
@@ -241,12 +249,10 @@ async def _search_documents(request: SearchRequest, database_url: str,
                     candidates[(doc.hash, doc.ext)] = retrieve_candidates(connection, doc, plan, query_chunks)
             timings.append(("All database retrieval", perf_counter() - tic))
 
-        results: list[DocumentResult] = []
-        for doc in documents:
+        async def evaluate_document(doc: DocumentReference) -> DocumentResult:
             ids = candidates.get((doc.hash, doc.ext))
             if ids == set():
-                results.append(DocumentResult(hash=doc.hash, ext=doc.ext, matches=[], status="no_candidates"))
-                continue
+                return DocumentResult(hash=doc.hash, ext=doc.ext, matches=[], status="no_candidates")
             tic = perf_counter()
             try:
                 tree, selectable = candidate_tree(trees[(doc.hash, doc.ext)], doc.name, ids)
@@ -255,13 +261,16 @@ async def _search_documents(request: SearchRequest, database_url: str,
                     "tree": tree,
                 }, NodeMatches)
                 matches = validate_matches(answer.matches, tree, selectable)
-                results.append(DocumentResult(hash=doc.hash, ext=doc.ext, matches=matches, status="evaluated"))
+                return DocumentResult(hash=doc.hash, ext=doc.ext, matches=matches, status="evaluated")
             except Exception:
                 logger.exception("Final search evaluation failed for %s.%s", doc.hash, doc.ext)
-                results.append(DocumentResult(hash=doc.hash, ext=doc.ext, matches=[], status="error",
-                                              error="Could not review this document; retry the search."))
+                return DocumentResult(hash=doc.hash, ext=doc.ext, matches=[], status="error",
+                                      error="Could not review this document; retry the search.")
             finally:
                 timings.append((f"Final evaluation: {doc.name}", perf_counter() - tic))
+
+        # gather preserves document order; evaluation durations overlap in the table.
+        results = await asyncio.gather(*(evaluate_document(doc) for doc in documents))
 
     explanations = []
     if not use_retrieval:

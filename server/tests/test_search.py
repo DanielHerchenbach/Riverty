@@ -1,3 +1,4 @@
+import asyncio
 import os
 import unittest
 from unittest.mock import AsyncMock, MagicMock, patch
@@ -53,7 +54,10 @@ class SearchFlowTests(unittest.IsolatedAsyncioTestCase):
         client = MagicMock()
         client.__aenter__ = AsyncMock(return_value=client)
         client.__aexit__ = AsyncMock(return_value=None)
-        calls = AsyncMock(side_effect=[plan, *answers])
+        async def respond(client, system, payload, schema):
+            return plan if schema is SearchPlan else await answers(payload)
+
+        calls = AsyncMock(side_effect=respond if callable(answers) else [plan, *answers])
         with patch("server.services.search.psycopg.connect", return_value=connection), \
              patch("server.services.search.AsyncOpenAI", return_value=client), \
              patch("server.services.search.structured_call", calls), \
@@ -74,6 +78,25 @@ class SearchFlowTests(unittest.IsolatedAsyncioTestCase):
         embed.assert_not_awaited()
         self.assertNotIn("complete_document", calls.await_args_list[1].args[2])
         self.assertNotIn("selectable_ids", calls.await_args_list[1].args[2])
+
+    async def test_evaluations_overlap_and_results_keep_document_order(self):
+        both_started = asyncio.Event()
+        started = []
+
+        async def answer(payload):
+            name = payload["tree"]["text"]
+            started.append(name)
+            if len(started) == 2:
+                both_started.set()
+            await both_started.wait()
+            return NodeMatches(matches=["n2"] if name == "a.pdf" else [])
+
+        result, _, _, _ = await asyncio.wait_for(self.run_search(
+            SearchPlan(exact_phrases=[], semantic_queries=[]), answer,
+        ), timeout=2)
+        self.assertEqual(len(started), 2)
+        self.assertEqual([doc.hash for doc in result.documents], ["a" * 64, "b" * 64])
+        self.assertEqual([doc.matches for doc in result.documents], [["n2"], []])
 
     async def test_retrieval_skips_unmatched_documents_and_flags_bad_ids(self):
         with self.assertLogs("server.services.search", level="ERROR"):

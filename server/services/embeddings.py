@@ -4,9 +4,9 @@ import math
 
 from openai import AsyncOpenAI
 
+from server.models import EMBEDDING_MODEL
 from server.tree import Chunk, token_ids
 
-EMBEDDING_MODEL = "text-embedding-3-small"
 EMBEDDING_DIMENSIONS = 1536  # Must match schema.sql.
 MAX_EMBEDDING_TOKENS = 8191
 EMBEDDING_BATCH_SIZE = 32
