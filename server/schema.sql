@@ -7,6 +7,7 @@ and stable for the stored tree.
 CREATE TABLE IF NOT EXISTS files (
     hash TEXT NOT NULL,
     ext TEXT NOT NULL,
+    filename TEXT NOT NULL,
     tree JSONB NULL,
     CONSTRAINT files_hash_ext_unique UNIQUE (hash, ext)
 );

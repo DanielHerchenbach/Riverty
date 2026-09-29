@@ -6,6 +6,19 @@ type TreeResponse = {
   tree: TreeNode[];
 };
 
+export type StoredDocument = {
+  hash: string;
+  ext: string;
+  filename: string;
+  tree: TreeNode[] | null;
+};
+
+export async function listDocuments(): Promise<StoredDocument[]> {
+  const response = await fetch(`${API_BASE_URL}/api/files`);
+  await ensureSuccess(response);
+  return response.json();
+}
+
 export type SearchDocument = { hash: string; ext: string; name: string };
 export type DocumentSearchResult = {
   hash: string;

@@ -72,9 +72,23 @@ def file_exists(file_hash: str, ext: str) -> Response:
     return Response(status_code=200)
 
 
+@app.get("/api/files")
+def list_files() -> list[dict]:
+    with psycopg.connect(DATABASE_URL) as connection:
+        rows = connection.execute(
+            "SELECT hash, ext, filename, tree FROM files ORDER BY filename, hash, ext"
+        ).fetchall()
+    return [
+        {"hash": file_hash, "ext": ext, "filename": filename, "tree": tree}
+        for file_hash, ext, filename, tree in rows
+    ]
+
+
 @app.put("/api/upload/{file_hash}/{ext}")
 def upload_file(file_hash: str, ext: str, file: UploadFile = File(...)) -> dict[str, str | bool]:
     validate_file_key(file_hash, ext)
+    if not file.filename:
+        raise HTTPException(status_code=422, detail="The uploaded file must have a filename")
     final_path = stored_file_path(file_hash, ext)
 
     with psycopg.connect(DATABASE_URL) as connection:
@@ -83,6 +97,7 @@ def upload_file(file_hash: str, ext: str, file: UploadFile = File(...)) -> dict[
             (file_hash, ext),
         ).fetchone()
     if existing is not None and final_path.is_file():
+        file.file.close()
         return {"hash": file_hash, "ext": ext, "already_present": True}
 
     FILES_DIR.mkdir(parents=True, exist_ok=True)
@@ -95,9 +110,9 @@ def upload_file(file_hash: str, ext: str, file: UploadFile = File(...)) -> dict[
 
         with psycopg.connect(DATABASE_URL) as connection:
             connection.execute(
-                "INSERT INTO files (hash, ext, tree) VALUES (%s, %s, NULL) "
+                "INSERT INTO files (hash, ext, filename, tree) VALUES (%s, %s, %s, NULL) "
                 "ON CONFLICT (hash, ext) DO NOTHING",
-                (file_hash, ext),
+                (file_hash, ext, file.filename),
             )
     except Exception as error:
         temporary_path.unlink(missing_ok=True)
