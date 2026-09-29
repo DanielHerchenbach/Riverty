@@ -4,6 +4,7 @@
   import DocumentSearch from "./components/DocumentSearch.svelte";
   import { selection, searchState } from "./lib/documents.svelte";
   import { documentRoot, matchAncestors } from "./lib/documentTree";
+  import { IconListTree } from "@tabler/icons-svelte";
 
   let root = $derived(selection.document?.tree
     ? documentRoot(selection.document.path, selection.document.tree) : null);
@@ -14,14 +15,17 @@
 </script>
 
 <main class="panels" aria-label="Document workspace">
-  <section class="panel" aria-labelledby="document-input-title">
+  <section class="panel documents-panel" aria-labelledby="document-input-title">
     <DocumentInput />
   </section>
-  <section class="panel" aria-labelledby="search-title">
+  <section class="panel search-panel" aria-labelledby="search-title">
     <DocumentSearch />
   </section>
-  <section class="panel" aria-labelledby="document-view-title">
-    <h2 id="document-view-title">Document view</h2>
+  <section class="panel tree-panel" aria-labelledby="document-view-title">
+    <div class="panel-heading tree-heading">
+      <h2 id="document-view-title"><IconListTree size={20} stroke={1.6} />Document Results</h2>
+      {#if hasResults}<span class="tree-legend"><span class="legend-swatch"></span>{matches.size} match{matches.size === 1 ? "" : "es"}</span>{/if}
+    </div>
     {#if selection.document}
       {#if root}
         {#if selection.document.searchResult?.status === "error"}
@@ -40,7 +44,7 @@
         <p class="tree-message">Analysis is still in progress.</p>
       {/if}
     {:else}
-      <p class="tree-message">Select a document to view its structure.</p>
+      <p class="tree-message">Select a document.</p>
     {/if}
   </section>
 </main>

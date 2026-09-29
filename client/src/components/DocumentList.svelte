@@ -1,5 +1,6 @@
 <script lang="ts">
   import { documents, selection } from "../lib/documents.svelte";
+  import { IconFileText, IconTrash } from "@tabler/icons-svelte";
 </script>
 
 <ul class="document-list">
@@ -12,6 +13,7 @@
         aria-pressed={selection.document === document}
         onclick={() => (selection.document = document)}
       >
+        <IconFileText size={18} stroke={1.6} />
         <span class="document-path" title={document.path}>{document.path}</span>
         <span class="document-state" class:state-error={document.state === "error"}>
           {document.state === "hashing" ? "Hashing…" :
@@ -22,11 +24,11 @@
             document.searchResult ? `${document.searchResult.matches.length} match${document.searchResult.matches.length === 1 ? "" : "es"}` : "Ready"}
         </span>
       </button>
-      <button type="button" aria-label={`Remove ${document.path}`} onclick={() => {
+      <button class="icon-button remove-document" type="button" title={`Remove ${document.path}`} aria-label={`Remove ${document.path}`} onclick={() => {
         if (selection.document === document) selection.document = null;
         documents.splice(index, 1);
       }}>
-        Remove
+        <IconTrash size={18} stroke={1.7} />
       </button>
     </li>
   {/each}

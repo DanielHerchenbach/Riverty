@@ -28,6 +28,7 @@ export type DocumentSearchResult = {
   error: string | null;
 };
 export type SearchResponse = {
+  plan: { exact_phrases: string[]; semantic_queries: string[] };
   explanations: string[];
   documents: DocumentSearchResult[];
 };

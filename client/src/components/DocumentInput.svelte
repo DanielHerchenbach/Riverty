@@ -4,6 +4,7 @@
   import { hashFile } from "../lib/hash";
   import { analyzeDocument, listDocuments, uploadIfMissing } from "../lib/documentApi";
   import DocumentList from "./DocumentList.svelte";
+  import { IconFiles, IconPlus } from "@tabler/icons-svelte";
 
   let loading = $state(true);
   let loadError = $state<string | null>(null);
@@ -84,9 +85,9 @@
 </script>
 
 <div class="panel-heading">
-  <h1 id="document-input-title">Document input</h1>
+  <h1 id="document-input-title"><IconFiles size={20} stroke={1.6} />Documents <span class="heading-count">{documents.length}</span></h1>
   <label class="file-picker">
-    <span>Add documents</span>
+    <IconPlus size={16} /><span>Add documents</span>
     <input type="file" multiple onchange={addFiles} />
   </label>
 </div>
@@ -99,3 +100,6 @@
 {/if}
 
 <DocumentList />
+{#if !loading && !loadError && documents.length === 0}
+  <p class="empty-documents">Add your documents to search and explore their structure.</p>
+{/if}
